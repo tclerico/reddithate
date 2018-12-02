@@ -7,7 +7,7 @@ import mysql.connector
 from mysql.connector import errorcode
 
 try:
-    cnx = mysql.connector.connect(user="reddit@redditcodeathon", password='C0meF0rTheCats', host='redditcodeathon.mysql.database.azure.com', database='reddit', ssl_ca='/Users/chay/Desktop/redditrush.pem', ssl_verify_cert=True)
+    cnx = mysql.connector.connect(user="reddit@redditcodeathon", password='C0meF0rTheCats', host='redditcodeathon.mysql.database.azure.com', database='reddit', ssl_ca='/Users/timc/Desktop/redditrush.pem', ssl_verify_cert=True)
 
 except mysql.connector.Error as err:
     if err.errno == errorcode.ER_ACCESS_DENIED_ERROR:
@@ -128,3 +128,53 @@ def get_subjects():
 
     return pull
 
+
+def update_averages():
+    cursor = cnx.cursor()
+
+    sql = "Select id from Users"
+    cursor.execute(sql)
+    users = cursor.fetchall()
+
+    uavg = []
+
+    for u in users:
+        sql = "Select ROUND(SUM(sentiment)), count(sentiment) from Comments where user_id = %s"
+        val = (u[0])
+        cursor.execute(sql)
+        inf = cursor.fetchall()
+        cavg = inf[0]/inf[1]
+
+        sql = "Select ROUND(SUM(sentiment)), count(sentiment) from Posts where user_id = %s"
+        val = (u[0])
+        cursor.execute(sql)
+        inf = cursor.fetchall()
+        pavg = inf[0]/inf[1]
+
+        tavg = (pavg+cavg)/2
+
+        uavg.append(u[0, tavg])
+
+    for u in uavg:
+        sql = "INSERT INTO usersentiment (user_id, subjects_id, sentiment_val) VALUES (%s, %s, %s)"
+        vals = (u[0], 1, u[1])
+
+        cursor.execute(sql, vals)
+
+    cnx.commit()
+
+
+
+
+def av_test():
+    cursor = cnx.cursor()
+    sql = "Select ROUND(SUM(sentiment)), count(sentiment) from Comments where user_id = 'zzvyb'"
+    cursor.execute(sql)
+    print(cursor.fetchall())
+
+
+def main():
+    av_test()
+
+
+main()
