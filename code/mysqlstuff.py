@@ -115,3 +115,53 @@ def get_comment():
 
     return result
 
+
+def update_averages():
+    cursor = cnx.cursor()
+
+    sql = "Select id from Users"
+    cursor.execute(sql)
+    users = cursor.fetchall()
+
+    uavg = []
+
+    for u in users:
+        sql = "Select ROUND(SUM(sentiment)), count(sentiment) from Comments where user_id = %s"
+        val = (u[0])
+        cursor.execute(sql)
+        inf = cursor.fetchall()
+        cavg = inf[0]/inf[1]
+
+        sql = "Select ROUND(SUM(sentiment)), count(sentiment) from Posts where user_id = %s"
+        val = (u[0])
+        cursor.execute(sql)
+        inf = cursor.fetchall()
+        pavg = inf[0]/inf[1]
+
+        tavg = (pavg+cavg)/2
+
+        uavg.append(u[0, tavg])
+
+    for u in uavg:
+        sql = "INSERT INTO usersentiment (user_id, subjects_id, sentiment_val) VALUES (%s, %s, %s)"
+        vals = (u[0], 1, u[1])
+
+        cursor.execute(sql, vals)
+
+    cnx.commit()
+
+
+
+
+def av_test():
+    cursor = cnx.cursor()
+    sql = "Select ROUND(SUM(sentiment)), count(sentiment) from Comments where user_id = 'zzvyb'"
+    cursor.execute(sql)
+    print(cursor.fetchall())
+
+
+def main():
+    av_test()
+
+
+main()
