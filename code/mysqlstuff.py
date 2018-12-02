@@ -7,7 +7,7 @@ import mysql.connector
 from mysql.connector import errorcode
 
 try:
-    cnx = mysql.connector.connect(user="reddit@redditcodeathon", password='C0meF0rTheCats', host='redditcodeathon.mysql.database.azure.com', database='reddit', ssl_ca='/Users/timc/Desktop/redditrush.pem', ssl_verify_cert=True)
+    cnx = mysql.connector.connect(user="reddit@redditcodeathon", password='C0meF0rTheCats', host='redditcodeathon.mysql.database.azure.com', database='reddit', ssl_ca='/Users/chay/Desktop/redditrush.pem', ssl_verify_cert=True)
 
 except mysql.connector.Error as err:
     if err.errno == errorcode.ER_ACCESS_DENIED_ERROR:
@@ -42,7 +42,7 @@ def insert_post(info):
             # insert post
             sql = "INSERT INTO Posts (id, title, date, link, sentiment, karma, user_id, subreddit_id, subject_id ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)"
             val = (i.get('post_id'), i.get('title'), i.get('date'), i.get('link'), i.get('sentiment'),
-                   i.get('karma'), i.get('author_id'), i.get('subreddit_id'), 1)
+                   i.get('karma'), i.get('author_id'), i.get('subreddit_id'), i.get('subject_id'))
             cursor.execute(sql, val)
         except:
             print("Post already exists")
@@ -66,7 +66,7 @@ def insert_comment(info):
         # insert comment
         sql = "INSERT INTO Comments (id, body, date, link, karma, sentiment, user_id, post_id, subject_id, parent_id ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
         val = (i.get('comment_id'), i.get('body'), i.get('date'), i.get('permalink'), i.get('score'),
-               i.get('sentiment'), i.get('author_id'), i.get('post_id'), 1, i.get('parent_id'))
+               i.get('sentiment'), i.get('author_id'), i.get('post_id'), i.get('subject_id'), i.get('parent_id'))
         cursor.execute(sql, val)
 
     cnx.commit()
@@ -114,4 +114,17 @@ def get_comment():
     result = cursor.fetchall()
 
     return result
+
+
+def get_subjects():
+    cursor = cnx.cursor()
+
+    subjects = "SELECT * FROM Subjects"
+
+    pull = dict()
+
+    cursor.execute(subjects)
+    pull["subjects"] = cursor.fetchall()
+
+    return pull
 
