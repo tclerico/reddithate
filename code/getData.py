@@ -96,27 +96,30 @@ def get_data_from_subreddit():
         results = [posts, post_comments]
         return results
 
-
-def update_sentiments():
-    average_sentiments()
-
-
+#
+# def update_sentiments():
+#     average_sentiments()
 
 
-print("Starting MySQL Inserts")
-print()
 
-results = get_data_from_subreddit()
-# Insert data into MySQL
-insert_post(results[0])
-insert_comment(results[1])
+def main():
 
-p = scheduler.add_job(update_sentiments, CronTrigger.from_crontab('0 * * * *'))
+    get_data_from_subreddit()
+    print("Starting MySQL Inserts")
+    print()
+    #
+    # results = get_data_from_subreddit()
+    # # Insert data into MySQL
+    # insert_post(results[0])
+    # insert_comment(results[1])
+
+    # p = scheduler.add_job(update_sentiments, CronTrigger.from_crontab('0 * * * *'))
 
 
-# print("Starting Neo4j Node Creation")
-# print()
-# Create nodes in neo4J with MySQL info
-# Pulls entire MySQL db -> only use when neo4j is clear or db has unique data
-neo4j_execute()
-print("Nodes Created, Check Console")
+    # print("Starting Neo4j Node Creation")
+    # print()
+    # Create nodes in neo4J with MySQL info
+    # Pulls entire MySQL db -> only use when neo4j is clear or db has unique data
+    # neo4j_execute()
+    # print("Nodes Created, Check Console")
+main()

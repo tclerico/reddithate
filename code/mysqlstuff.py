@@ -115,7 +115,3 @@ def get_comment():
 
     return result
 
-
-def average_sentiments():
-    cursor = cnx.cursor()
-
