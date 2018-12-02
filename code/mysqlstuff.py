@@ -151,8 +151,6 @@ def update_averages():
     cnx.commit()
 
 
-
-
 def av_test():
     cursor = cnx.cursor()
     sql = "Select ROUND(SUM(sentiment)), count(sentiment) from Comments where user_id = 'zzvyb'"
@@ -160,8 +158,10 @@ def av_test():
     print(cursor.fetchall())
 
 
-def main():
-    av_test()
+def subs():
+    cursor = cnx.cursor()
+    sql = "Select * from subjects;"
+    cursor.execute(sql)
+    return cursor.fetchall()
 
 
-main()

@@ -35,7 +35,7 @@ def get_data_from_subreddit():
     # empty list to add all comments into
     post_comments = []
     posts = []
-
+    subjects = subs()
 
     # assume you have a Subreddit instance bound to variable `subreddit`
     for submission in subreddit.hot(limit=3):
@@ -59,7 +59,7 @@ def get_data_from_subreddit():
         )
         sentiment = client.analyze_sentiment(document=document).document_sentiment
         post_info["sentiment"] = sentiment.score
-        #print(post_info)
+        print(post_info)
         posts.append(post_info)
 
         submission.comments.replace_more(limit=None)
@@ -67,7 +67,7 @@ def get_data_from_subreddit():
             if comment.body != "[removed]" and comment.body != '[deleted]':
                 # get all info from comments and add to list
                 try:
-                    # print(comment.author.name)
+                    print(comment.author.name)
                     info = {
                         'post_id': comment.submission.id,
                         'comment_id': comment.id,
@@ -84,6 +84,7 @@ def get_data_from_subreddit():
                         content=text,
                         type=enums.Document.Type.PLAIN_TEXT
                     )
+
                     sentiment = client.analyze_sentiment(document=document).document_sentiment
                     info["sentiment"] = sentiment.score
                     post_comments.append(info)
@@ -92,9 +93,9 @@ def get_data_from_subreddit():
 
         print("Comments done")
         print()
-        #print(post_comments)
-        results = [posts, post_comments]
-        return results
+        print(post_comments)
+    #     results = [posts, post_comments]
+    # return results
 
 #
 # def update_sentiments():
