@@ -10,13 +10,12 @@ from mysqlstuff import *
 # from neo import *
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.cron import CronTrigger
+from text_analysis import *
 
 scheduler = BackgroundScheduler()
 
-def get_data_from_subreddit(subreddits, postCount):
-    os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = str('redditNLP-c250299d83e5.json')
-    # Instantiates a client
-    client = language.LanguageServiceClient()
+
+def get_data(subreddits, postCount):
 
     set_praw()
 
@@ -27,24 +26,23 @@ def get_data_from_subreddit(subreddits, postCount):
     print("Connection read only to reddit: " + str(reddit.read_only))
     print()
 
-    for subredditToSearch in subreddits:
-        # assume you have a Reddit instance bound to variable `reddit`
-        subreddit = reddit.subreddit(subredditToSearch)
+    for sr in subreddits:
 
-        print("Sub-Reddit: "+subreddit.display_name)  # Output: redditdev
+        subreddit = reddit.subreddit(sr)
 
-        # empty list to add all comments into
-        post_comments = []
-        posts = []
+        print("Sub-Reddit: " + subreddit.display_name)
 
-        subjects = get_subjects()
 
-        # assume you have a Subreddit instance bound to variable `subreddit`
         for submission in subreddit.hot(limit=postCount):
-            # TODO: check if submission entities match subject
 
+            posts = []
+            comments = []
 
-            print("Post: "+ submission.title)
+            # get all info about the post
+            # adds all posts whether they match a subject or not
+            print(submission.title)
+            print("post id: "+submission.id)
+            print("posted by: "+ submission.author.name)
             post_info = {
                 "subreddit_id":     submission.subreddit_id[3:],
                 "subreddit":        subreddit.display_name,
@@ -57,90 +55,59 @@ def get_data_from_subreddit(subreddits, postCount):
                 "vote_ratio":       submission.upvote_ratio,
                 "link":             submission.url
             }
-            text = submission.title
-            print(text)
+            text = submission.selftext
+            post_subject = find_subject(text)
+            if len(post_subject) > 0:
+                print("Adding subject id for post")
+                post_info['subject_id'] = post_subject[0][1]
+            post_info['sentiment'] = text_sentiment(text)
 
-            document = types.Document(
-                content=text,
-                type=enums.Document.Type.PLAIN_TEXT
-            )
+            posts.append(post_info)
 
-            found = False
-            for word in text.split():
-                for subject in subjects.get("subjects"):
-                    if word.lower() in subject[1].lower():
-                        if not found:
-                            id = subject[0]
-                            print(id)
-                            print()
-                            post_info["subject_id"] = id
-                            found = True
-                            # TODO: WE FOUND A MATCH ADD THE RECORD
 
-                            sentiment = client.analyze_sentiment(document=document).document_sentiment
-                            post_info["sentiment"] = sentiment.score
-                            # print(post_info)
-                            posts.append(post_info)
 
-                            submission.comments.replace_more(limit=None)
-                            for comment in submission.comments.list():
-                                if comment.body != "[removed]" and comment.body != '[deleted]':
-                                    # get all info from comments and add to list
-                                    try:
-                                        # TODO: check if entities match subjects
-
-                                        # print(comment.author.name)
-                                        info = {
-                                            'post_id': comment.submission.id,
-                                            'comment_id': comment.id,
-                                            'permalink': comment.permalink,
-                                            'author': comment.author.name,
-                                            'author_id': reddit.redditor(str(comment.author)).id,
-                                            'date': datetime.datetime.fromtimestamp(comment.created_utc).strftime(
-                                                '%Y-%m-%d %H:%M:%S'),
-                                            'body': comment.body,
-                                            'score': comment.score,
-                                            'parent_id': (comment.parent_id if str(comment.parent_id)[:2] != "t3" else 'NULL')
-                                        }
-                                        text = comment.body
-                                        document = types.Document(
-                                            content=text,
-                                            type=enums.Document.Type.PLAIN_TEXT
-                                        )
-
-                                        comment_found = False
-                                        for comment_word in text.split():
-                                            for comment_subject in subjects.get("subjects"):
-                                                if comment_word.lower() in comment_subject[1].lower():
-                                                    if not comment_found:
-                                                        comment_id = subject[0]
-                                                        print(comment_id)
-                                                        info["subject_id"] = comment_id
-                                                        comment_found = True
-                                                        # TODO: WE FOUND A MATCH ADD THE RECORD
-                                                        sentiment = client.analyze_sentiment(document=document).document_sentiment
-                                                        info["sentiment"] = sentiment.score
-                                                        post_comments.append(info)
-
-                                    except:
-                                        continue
-
-                            print("Comments done")
-        insert_post(posts)
-        print(post_comments)
-        insert_comment(post_comments)
-
+            # go through all comments in the post
+            submission.comments.replace_more(limit=None)
+            for comment in submission.comments:
+                # make sure comment is actually there
+                if comment.body != "[removed]" and comment.body != '[deleted]':
+                    # need try/except for edge cases (eg. account is deleted)
+                    try:
+                        # analyze comment before adding it -> if it doesn't match a subject, don't add it
+                        comment_subject = find_subject(comment.body)
+                        if len(comment_subject) > 0:
+                            # get all info from comments and add to list
+                            print("comment id: "+comment.id+" in post: "+comment.submission.id)
+                            print("subject: "+str(comment_subject[0][1]))
+                            info = {
+                                'post_id': comment.submission.id,
+                                'comment_id': comment.id,
+                                'permalink': comment.permalink,
+                                'author': comment.author.name,
+                                'author_id': reddit.redditor(str(comment.author)).id,
+                                'date': datetime.datetime.fromtimestamp(comment.created_utc).strftime(
+                                    '%Y-%m-%d %H:%M:%S'),
+                                'body': comment.body,
+                                'score': comment.score,
+                                'parent_id': (comment.parent_id if str(comment.parent_id)[:2] != "t3" else 'NULL'),
+                                'subject_id': comment_subject[0][1],
+                                'sentiment': text_sentiment(comment.body)
+                            }
+                            comments.append(info)
+                    except:
+                        continue
+            print("Comments done, adding post and comments to DB")
+            insert_post(posts)
+            insert_comment(comments)
 
 
 
 
 def main():
-    # List of all subreddits to search
-    subreddits = {}
-
-    # How many posts to search
-    postCount = 10
-
-    get_data_from_subreddit(subreddits, postCount)
-
+    subreddits = [
+        "politics",
+        "thedonald"
+    ]
+    posts = 3
+    get_data(subreddits, posts)
 main()

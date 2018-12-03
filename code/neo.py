@@ -26,8 +26,8 @@ def create_nodes(tx):
         tx.run("Create (:SubReddit {name: $name, id: $id})", name=sub[1], id=sub[0])
 
     # Subjects
-    # for s in info.get("subject_id"):
-    #     tx.run("Create (:Subject {name: $name, id: $id})", name=s[1], id=s[0])
+    for s in info.get("subjects"):
+        tx.run("Create (:Subject {name: $name, id: $id})", name=s[1], id=s[0])
 
     # Posts
     for p in info.get("posts"):

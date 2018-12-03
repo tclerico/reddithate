@@ -5,9 +5,12 @@ https://github.com/tclerico
 
 import mysql.connector
 from mysql.connector import errorcode
+from environset import *
 
 try:
-    cnx = mysql.connector.connect(user="reddit@redditcodeathon", password='C0meF0rTheCats', host='redditcodeathon.mysql.database.azure.com', database='reddit', ssl_ca='/Users/timc/Desktop/redditrush.pem', ssl_verify_cert=True)
+    set_pem()
+    path = os.environ.get("SSL_PEM")
+    cnx = mysql.connector.connect(user="reddit@redditcodeathon", password='C0meF0rTheCats', host='redditcodeathon.mysql.database.azure.com', database='reddit', ssl_ca=path, ssl_verify_cert=True)
 
 except mysql.connector.Error as err:
     if err.errno == errorcode.ER_ACCESS_DENIED_ERROR:
@@ -79,7 +82,7 @@ def pull_all():
 
     users = "SELECT * FROM Users"
     subreddits = "SELECT * FROM SubReddits"
-    # subjects = "SELECT * FROM Subjects"
+    subjects = "SELECT * FROM Subjects"
     posts = "SELECT * FROM Posts"
     comments = "SELECT * FROM Comments"
     # subreddit_sentiment = "SELECT * FROM subrsentiment"
@@ -91,8 +94,8 @@ def pull_all():
     pull["users"] = cursor.fetchall()
     cursor.execute(subreddits)
     pull["subreddits"] = cursor.fetchall()
-    # cursor.execute(subjects)
-    # pull["subjects"] = cursor.fetchall()
+    cursor.execute(subjects)
+    pull["subjects"] = cursor.fetchall()
     cursor.execute(posts)
     pull["posts"] = cursor.fetchall()
     cursor.execute(comments)
@@ -120,13 +123,8 @@ def get_subjects():
     cursor = cnx.cursor()
 
     subjects = "SELECT * FROM Subjects"
-
-    pull = dict()
-
     cursor.execute(subjects)
-    pull["subjects"] = cursor.fetchall()
-
-    return pull
+    return cursor.fetchall()
 
 
 def update_averages():
@@ -176,5 +174,10 @@ def subs():
     sql = "Select * from subjects;"
     cursor.execute(sql)
     return cursor.fetchall()
+
+# def main():
+#     print(get_subjects())
+#
+# main()
 
 
