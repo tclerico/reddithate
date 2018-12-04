@@ -130,54 +130,55 @@ def get_subjects():
 def update_averages():
     cursor = cnx.cursor()
 
-    sql = "Select id from Users"
-    cursor.execute(sql)
-    users = cursor.fetchall()
+    users=get_users()
 
     uavg = []
 
     for u in users:
-        sql = "Select ROUND(SUM(sentiment)), count(sentiment) from Comments where user_id = %s"
-        val = (u[0])
-        cursor.execute(sql)
-        inf = cursor.fetchall()
-        cavg = inf[0]/inf[1]
+        try:
+            sql = "Select SUM(sentiment), count(sentiment) from Comments where user_id = %(id)s"
+            cursor.execute(sql, {"id": u})
+            inf = cursor.fetchall()[0]
+            cavg = inf[0]/inf[1]
+        except:
+            continue
 
-        sql = "Select ROUND(SUM(sentiment)), count(sentiment) from Posts where user_id = %s"
-        val = (u[0])
-        cursor.execute(sql)
-        inf = cursor.fetchall()
-        pavg = inf[0]/inf[1]
-
-        tavg = (pavg+cavg)/2
-
-        uavg.append(u[0, tavg])
+        uavg.append([u, cavg])
 
     for u in uavg:
-        sql = "INSERT INTO usersentiment (user_id, subjects_id, sentiment_val) VALUES (%s, %s, %s)"
-        vals = (u[0], 1, u[1])
+        sql = "INSERT INTO usersentiment (user_id, sentiment_val) VALUES (%s, %s)"
+        vals = (u[0], u[1])
 
         cursor.execute(sql, vals)
 
     cnx.commit()
 
 
+
+
+def get_users():
+    cursor = cnx.cursor()
+    sql = "Select id from Users;"
+    cursor.execute(sql)
+    query = cursor.fetchall()
+    result = []
+    for q in query:
+        result.append(q[0])
+    return result
+
+
 def av_test():
+    user = get_users()
+    u = user[0]
+    print(u)
     cursor = cnx.cursor()
-    sql = "Select ROUND(SUM(sentiment)), count(sentiment) from Comments where user_id = 'zzvyb'"
-    cursor.execute(sql)
-    print(cursor.fetchall())
+    sql = "Select SUM(sentiment), count(sentiment) from Comments where user_id = %(user_id)s"
+    cursor.execute(sql, {'user_id': u})
+    print(cursor.fetchall()[0])
 
+def main():
+    update_averages()
 
-def subs():
-    cursor = cnx.cursor()
-    sql = "Select * from subjects;"
-    cursor.execute(sql)
-    return cursor.fetchall()
-
-# def main():
-#     print(get_subjects())
-#
-# main()
+main()
 
 
