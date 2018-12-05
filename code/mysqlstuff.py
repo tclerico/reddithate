@@ -8,9 +8,10 @@ from mysql.connector import errorcode
 from environset import *
 
 try:
-    set_pem()
-    path = os.environ.get("SSL_PEM")
-    cnx = mysql.connector.connect(user="reddit@redditcodeathon", password='C0meF0rTheCats', host='redditcodeathon.mysql.database.azure.com', database='reddit', ssl_ca=path, ssl_verify_cert=True)
+    # set_mysql() is a function for sensitive mysql database info
+    # and is not included in the project
+    connection = set_mysql()
+    cnx = mysql.connector.connect(user=connection[0], password=connection[1], host=connection[2], database='reddit')
 
 except mysql.connector.Error as err:
     if err.errno == errorcode.ER_ACCESS_DENIED_ERROR:
@@ -27,7 +28,7 @@ def insert_post(info):
     for i in info:
         # create user if user id doesn't exist
         try:
-            sql = "INSERT INTO Users (id, name) VALUES (%s, %s)"
+            sql = "INSERT INTO users (id, name) VALUES (%s, %s)"
             val = (i.get('author_id'), i.get('author'))
             cursor.execute(sql, val)
         except:
@@ -35,7 +36,7 @@ def insert_post(info):
 
         # create subreddit if it doesn't already exist
         try:
-            sql = "INSERT INTO SubReddits (id, name) VALUES (%s, %s)"
+            sql = "INSERT INTO subreddits (id, name) VALUES (%s, %s)"
             val = (i.get('subreddit_id'), i.get('subreddit'))
             cursor.execute(sql, val)
         except:
@@ -43,9 +44,9 @@ def insert_post(info):
 
         try:
             # insert post
-            sql = "INSERT INTO Posts (id, title, date, link, sentiment, karma, user_id, subreddit_id, subject_id ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)"
+            sql = "INSERT INTO posts (id, title, date, link, sentiment, karma, user_id, subreddit_id) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)"
             val = (i.get('post_id'), i.get('title'), i.get('date'), i.get('link'), i.get('sentiment'),
-                   i.get('karma'), i.get('author_id'), i.get('subreddit_id'), i.get('subject_id'))
+                   i.get('karma'), i.get('author_id'), i.get('subreddit_id'))
             cursor.execute(sql, val)
         except:
             print("Post already exists")
@@ -60,14 +61,14 @@ def insert_comment(info):
     for i in info:
         # create user if user id doesn't exist
         try:
-            sql = "INSERT INTO Users (id, name) VALUES (%s, %s)"
+            sql = "INSERT INTO users (id, name) VALUES (%s, %s)"
             val = (i.get('author_id'), i.get('author'))
             cursor.execute(sql, val)
         except:
             count+=1
 
         # insert comment
-        sql = "INSERT INTO Comments (id, body, date, link, karma, sentiment, user_id, post_id, subject_id, parent_id ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
+        sql = "INSERT INTO comments (id, body, date, link, karma, sentiment, user_id, post_id, subject_id, parent_id ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
         val = (i.get('comment_id'), i.get('body'), i.get('date'), i.get('permalink'), i.get('score'),
                i.get('sentiment'), i.get('author_id'), i.get('post_id'), i.get('subject_id'), i.get('parent_id'))
         cursor.execute(sql, val)
@@ -80,13 +81,12 @@ def pull_all():
 
     cursor = cnx.cursor()
 
-    users = "SELECT * FROM Users"
-    subreddits = "SELECT * FROM SubReddits"
-    subjects = "SELECT * FROM Subjects"
-    posts = "SELECT * FROM Posts"
-    comments = "SELECT * FROM Comments"
-    # subreddit_sentiment = "SELECT * FROM subrsentiment"
-    # usersentiment = "SELECT * FROM usersentiment"
+    users = "SELECT * FROM users"
+    subreddits = "SELECT * FROM subreddits"
+    subjects = "SELECT * FROM subjects"
+    posts = "SELECT * FROM posts"
+    comments = "SELECT * FROM comments"
+
 
     pull = dict()
 
@@ -100,10 +100,7 @@ def pull_all():
     pull["posts"] = cursor.fetchall()
     cursor.execute(comments)
     pull["comments"] = cursor.fetchall()
-    # cursor.execute(subreddit_sentiment)
-    # pull["subreddit_sentiment"] = cursor.fetchall()
-    # cursor.execute(usersentiment)
-    # pull["user_sentiment"] = cursor.fetchall()
+
 
     return pull
 
@@ -122,12 +119,12 @@ def get_comment():
 def get_subjects():
     cursor = cnx.cursor()
 
-    subjects = "SELECT * FROM Subjects"
+    subjects = "SELECT * FROM subjects"
     cursor.execute(subjects)
     return cursor.fetchall()
 
 
-def update_averages():
+def update_user_averages():
     cursor = cnx.cursor()
 
     users=get_users()
@@ -136,7 +133,7 @@ def update_averages():
 
     for u in users:
         try:
-            sql = "Select SUM(sentiment), count(sentiment) from Comments where user_id = %(id)s"
+            sql = "Select SUM(sentiment), count(sentiment) from comments where user_id = %(id)s"
             cursor.execute(sql, {"id": u})
             inf = cursor.fetchall()[0]
             cavg = inf[0]/inf[1]
@@ -145,6 +142,7 @@ def update_averages():
 
         uavg.append([u, cavg])
 
+    # TODO GET RID OF THIS. NOT STORING AVERAGES IN DB
     for u in uavg:
         sql = "INSERT INTO usersentiment (user_id, sentiment_val) VALUES (%s, %s)"
         vals = (u[0], u[1])
@@ -154,11 +152,19 @@ def update_averages():
     cnx.commit()
 
 
+def update_subreddit_average():
+    cursor = cnx.cursor()
+
+    sql = "select sum(c.sentiment), count(sentiment), ps.sid from comments as c inner join (select p.id as pid, s.id as sid, s.name from posts as p inner join subreddits as s where p.subreddit_id=s.id) as ps where c.post_id = ps.pid Group by ps.sid;"
+    cursor.execute(sql)
+
+    query = cursor.fetchall()
+    return query
 
 
 def get_users():
     cursor = cnx.cursor()
-    sql = "Select id from Users;"
+    sql = "Select id from users;"
     cursor.execute(sql)
     query = cursor.fetchall()
     result = []
@@ -172,13 +178,16 @@ def av_test():
     u = user[0]
     print(u)
     cursor = cnx.cursor()
-    sql = "Select SUM(sentiment), count(sentiment) from Comments where user_id = %(user_id)s"
+    sql = "Select SUM(sentiment), count(sentiment) from comments where user_id = %(user_id)s"
     cursor.execute(sql, {'user_id': u})
     print(cursor.fetchall()[0])
 
-def main():
-    update_averages()
 
-main()
-
-
+def insert_subjects(subjects):
+    cursor = cnx.cursor()
+    counter = 1
+    for s in subjects:
+        sql = "INSERT INTO subjects (id, name) VALUES (%s, %s)"
+        cursor.execute(sql, (counter, s))
+        counter+=1
+    cnx.commit()

@@ -32,14 +32,14 @@ def create_nodes(tx):
     # Posts
     for p in info.get("posts"):
         tx.run("Create (:Post {title: $title, id: $id, date: $date, sentiment: $sentiment,"
-               " karma: $karma, user_id: $uid, subreddit_id: $sub_id, subject_id: $subject_id})",
-               title=p[1], id=p[0], date=p[2], sentiment=p[4], karma=p[5], uid=p[6], sub_id=p[7], subject_id=p[8])
+               " karma: $karma, user_id: $uid, subreddit_id: $sub_id})",
+               title=p[1], id=p[0], date=p[2], sentiment=p[4], karma=p[5], uid=p[6], sub_id=p[7])
 
     # Comments
     for c in info.get("comments"):
         tx.run("Create (:Comment {id: $id, body: $body, date: $date, karma: $karma, sentiment: $sentiment,"
                "user_id: $uid, post_id: $pid, subject_id: $sid, parent_id: $parent_id})",
-               body=c[1], id=c[0], date=c[2], karma=c[4], sentiment=c[5], uid=c[6], pid=c[7], sid=c[8], parent_id=c[9])
+               body=c[1], id=c[0], date=c[2], sentiment=c[4], uid=c[5], pid=c[6], sid=c[7], parent_id=c[8], karma=c[9])
 
 
 def set_indices(tx):
@@ -74,7 +74,7 @@ def simple_relationships(tx):
     tx.run("match (u:User), (c:Comment) where u.id=c.user_id Create (u)-[:Commented]->(c)")
     tx.run("match (p:Post), (c:Comment) where p.id=c.post_id Create (c)-[:Comment_of]->(p)")
     tx.run("MATCH (p:Post), (s:SubReddit) WHERE p.subreddit_id=s.id CREATE (p)-[:Posted_In]->(s)")
-    # tx.run("match (c:Comments), (s:Subjects) WHERE c.subject_id=s.id CREATE (c)-[:About]->(s)")
+    tx.run("match (c:Comments), (s:Subjects) WHERE c.subject_id=s.id CREATE (c)-[:About]->(s)")
 
 # def neo4j_execute():
 #     with driver.session() as session:

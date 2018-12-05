@@ -11,6 +11,7 @@ from mysqlstuff import *
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.cron import CronTrigger
 from text_analysis import *
+import threading
 
 scheduler = BackgroundScheduler()
 
@@ -40,9 +41,7 @@ def get_data(subreddits, postCount):
 
             # get all info about the post
             # adds all posts whether they match a subject or not
-            print(submission.title)
-            print("post id: "+submission.id)
-            print("posted by: "+ submission.author.name)
+            print(submission.title+ " Post id: "+submission.id+" posted by: "+submission.author.name)
             post_info = {
                 "subreddit_id":     submission.subreddit_id[3:],
                 "subreddit":        subreddit.display_name,
@@ -56,16 +55,15 @@ def get_data(subreddits, postCount):
                 "link":             submission.url
             }
             text = submission.selftext
-            post_subject = find_subject(text)
-            if len(post_subject) > 0:
-                print("Adding subject id for post")
-                post_info['subject_id'] = post_subject[0][1]
+            # post_subject = find_subject(text)
+            # if len(post_subject) > 0:
+            #     print("Adding subject id for post")
+            #     post_info['subject_id'] = post_subject[0][1]
             post_info['sentiment'] = text_sentiment(text)
 
             posts.append(post_info)
 
-
-
+            print("Evaluating Comments")
             # go through all comments in the post
             submission.comments.replace_more(limit=None)
             for comment in submission.comments:
@@ -77,8 +75,7 @@ def get_data(subreddits, postCount):
                         comment_subject = find_subject(comment.body)
                         if len(comment_subject) > 0:
                             # get all info from comments and add to list
-                            print("comment id: "+comment.id+" in post: "+comment.submission.id)
-                            print("subject: "+str(comment_subject[0][1]))
+                            print("comment id: "+comment.id+" in post: "+comment.submission.id+" subject: "+str(comment_subject[0][1]))
                             info = {
                                 'post_id': comment.submission.id,
                                 'comment_id': comment.id,
@@ -91,7 +88,8 @@ def get_data(subreddits, postCount):
                                 'score': comment.score,
                                 'parent_id': (comment.parent_id if str(comment.parent_id)[:2] != "t3" else 'NULL'),
                                 'subject_id': comment_subject[0][1],
-                                'sentiment': text_sentiment(comment.body)
+                                'sentiment': text_sentiment(comment.body),
+                                'subreddit_id': submission.subreddit_id[3:]
                             }
                             comments.append(info)
                     except:
@@ -105,9 +103,8 @@ def get_data(subreddits, postCount):
 
 def main():
     subreddits = [
-        "politics",
-        "thedonald"
+        "news"
     ]
-    posts = 3
+    posts = 4
     get_data(subreddits, posts)
 main()
