@@ -103,8 +103,12 @@ def get_data(subreddits, postCount):
 
 def main():
     subreddits = [
-        "news"
+        "democrats",
+        "SandersForPresident",
+        "news",
+        "politics",
+        "the_donald"
     ]
-    posts = 4
+    posts = 5
     get_data(subreddits, posts)
 main()

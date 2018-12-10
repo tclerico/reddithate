@@ -74,7 +74,11 @@ def simple_relationships(tx):
     tx.run("match (u:User), (c:Comment) where u.id=c.user_id Create (u)-[:Commented]->(c)")
     tx.run("match (p:Post), (c:Comment) where p.id=c.post_id Create (c)-[:Comment_of]->(p)")
     tx.run("MATCH (p:Post), (s:SubReddit) WHERE p.subreddit_id=s.id CREATE (p)-[:Posted_In]->(s)")
-    tx.run("match (c:Comments), (s:Subjects) WHERE c.subject_id=s.id CREATE (c)-[:About]->(s)")
+
+def sentiment_relationships(tx):
+    tx.run("match (c:Comment), (s:Subject) where c.subject_id=s.id and c.sentiment > -0.25 and c.sentiment < 0.25 create (c)-[:Neutral]->(s)")
+    tx.run("match (c:Comment), (s:Subject) where c.subject_id=s.id and c.sentiment >= 0.25 create (c)-[:Positive]->(s)")
+    tx.run("match (c:Comment), (s:Subject) where c.subject_id=s.id and c.sentiment <= -0.25 create (c)-[:Negative]->(s)")
 
 # def neo4j_execute():
 #     with driver.session() as session:
@@ -90,3 +94,4 @@ with driver.session() as session:
         session.write_transaction(create_nodes)
         session.write_transaction(set_indices)
         session.write_transaction(simple_relationships)
+        session.write_transaction(sentiment_relationships)

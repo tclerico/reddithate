@@ -66,12 +66,14 @@ def insert_comment(info):
             cursor.execute(sql, val)
         except:
             count+=1
-
-        # insert comment
-        sql = "INSERT INTO comments (id, body, date, link, karma, sentiment, user_id, post_id, subject_id, parent_id ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
-        val = (i.get('comment_id'), i.get('body'), i.get('date'), i.get('permalink'), i.get('score'),
-               i.get('sentiment'), i.get('author_id'), i.get('post_id'), i.get('subject_id'), i.get('parent_id'))
-        cursor.execute(sql, val)
+        try:
+            # insert comment
+            sql = "INSERT INTO comments (id, body, date, link, karma, sentiment, user_id, post_id, subject_id, parent_id ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
+            val = (i.get('comment_id'), i.get('body'), i.get('date'), i.get('permalink'), i.get('score'),
+                   i.get('sentiment'), i.get('author_id'), i.get('post_id'), i.get('subject_id'), i.get('parent_id'))
+            cursor.execute(sql, val)
+        except:
+            continue
 
     cnx.commit()
     print("There were "+str(count)+" users who made multiple comments")
@@ -141,15 +143,7 @@ def update_user_averages():
             continue
 
         uavg.append([u, cavg])
-
-    # TODO GET RID OF THIS. NOT STORING AVERAGES IN DB
-    for u in uavg:
-        sql = "INSERT INTO usersentiment (user_id, sentiment_val) VALUES (%s, %s)"
-        vals = (u[0], u[1])
-
-        cursor.execute(sql, vals)
-
-    cnx.commit()
+    return uavg
 
 
 def update_subreddit_average():
@@ -157,9 +151,13 @@ def update_subreddit_average():
 
     sql = "select sum(c.sentiment), count(sentiment), ps.sid from comments as c inner join (select p.id as pid, s.id as sid, s.name from posts as p inner join subreddits as s where p.subreddit_id=s.id) as ps where c.post_id = ps.pid Group by ps.sid;"
     cursor.execute(sql)
-
     query = cursor.fetchall()
-    return query
+    ravg = []
+    for q in query:
+        avg = q[0]/q[1]
+        ravg.append([q[2], avg])
+
+    return ravg
 
 
 def get_users():
@@ -185,9 +183,24 @@ def av_test():
 
 def insert_subjects(subjects):
     cursor = cnx.cursor()
-    counter = 1
+    counter = 20
     for s in subjects:
         sql = "INSERT INTO subjects (id, name) VALUES (%s, %s)"
         cursor.execute(sql, (counter, s))
         counter+=1
     cnx.commit()
+
+# def main():
+#     s = [
+#         'politics',
+#         'politician',
+#         'rally',
+#         'alt-right',
+#         'college',
+#         'senate',
+#         'representatives',
+#         'congress',
+#         'news'
+#     ]
+#     insert_subjects(s)
+# main()
