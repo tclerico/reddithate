@@ -80,6 +80,7 @@ def sentiment_relationships(tx):
     tx.run("match (c:Comment), (s:Subject) where c.subject_id=s.id and c.sentiment >= 0.25 create (c)-[:Positive]->(s)")
     tx.run("match (c:Comment), (s:Subject) where c.subject_id=s.id and c.sentiment <= -0.25 create (c)-[:Negative]->(s)")
 
+
 # def neo4j_execute():
 #     with driver.session() as session:
 #         print("Creating Nodes")
