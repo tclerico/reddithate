@@ -8,3 +8,4 @@ move all the data to a Neo4J Database for better visualizations.
 
 All libraries used are outlined in 'requirements.txt'
 run 'pip install -r requirements.txt' to install all packages before running.
+An authentication will be needed for the google NLP and Reddit API to work properly (each needs its own respective auth).
