@@ -1,0 +1,78 @@
+{\rtf1\ansi\ansicpg1252\cocoartf1561\cocoasubrtf600
+{\fonttbl\f0\froman\fcharset0 Times-Roman;}
+{\colortbl;\red255\green255\blue255;\red14\green110\blue109;\red0\green0\blue0;\red14\green110\blue109;
+\red255\green255\blue255;}
+{\*\expandedcolortbl;;\csgenericrgb\c5490\c43137\c42745;\cssrgb\c0\c0\c0;\csgenericrgb\c5490\c43137\c42745;
+\cssrgb\c100000\c100000\c100000;}
+\margl1440\margr1440\vieww23040\viewh10220\viewkind0
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+
+\f0\b\fs28 \cf2 \
+\cf3 \ul \ulc3 Get average sentiment for every subreddit:\
+SQL:\cf2 \ulnone \
+
+\b0 \cf3 select sum(c.sentiment), count(sentiment), ps.sid from comments as c \
+inner join (select p.id as pid, s.id as sid, s.name from posts as p \
+inner join subreddits as s where p.subreddit_id=s.id) as ps where c.pos_id = ps.pid\
+Group by ps.sid;\
+\
+select avg(c.sentiment), ps.sid from comments as c \
+inner join (select p.id as pid, s.id as sid, s.name from posts as p \
+inner join subreddits as s where p.subreddit_id=s.id) as ps where c.pos_id = ps.pid\
+Group by ps.sid;\
+
+\b \ul NEO4J:
+\b0 \ulnone \
+match (s:SubReddit), (c:Comment), (p:Post) \
+where s.id = p.subreddit_id and c.post_id = p.id return s.id, avg(c.sentiment)\
+\
+
+\b \ul Get average sentiment for each user:\
+Sql:
+\b0 \ulnone \
+Select 
+\i \cf3 SUM
+\i0 \cf3 (sentiment), 
+\i \cf3 count
+\i0 \cf3 (sentiment) \
+from comments where user_id = \'93\'93;
+\b \cf2 \
+\cf3 \ul \ulc3 Neo4j:
+\b0 \ulnone \
+match (u:User \{id:""\}), (c:Comment) \
+where c.user_id=u.id return avg(c.sentiment)
+\b \cf4 \
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+\cf4 \
+\cf3 \ul \ulc3 Get a user\'92s sentiment order by time:\
+SQL:
+\b0 \ulnone \
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\partightenfactor0
+\cf3 \cb5 \CocoaLigature0 select u.name, c.sentiment, c.date from users as u\
+ inner join comments as c where u.id = c.user_id and u.id = 'f06zade';\cb1 \CocoaLigature1 \
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+
+\b \cf3 \ul \ulc3 Neo4j:
+\b0 \ulnone \
+match (u:User \{id:"f06zade"\}), (c:Comment)\
+where u.id = c.user_id return c.body, c.sentiment, c.date order by c.date\
+\
+
+\b \ul Get average sentiment for all subjects:\
+SQL:
+\b0 \ulnone \
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\partightenfactor0
+\cf0 \cb5 \CocoaLigature0 select s.name, avg(c.sentiment) as sent from subjects as s\
+inner join comments as c where s.id = c.subject_id \
+group by s.name order by sent DESC;\cf3 \
+
+\b \ul Neo4j:
+\b0 \ulnone \
+match (s:Subject), (c:Comment) \
+where c.subject_id=s.id return s.name, avg(c.sentiment) \
+order by avg(c.sentiment) DESC
+\b \cf4 \CocoaLigature1 \
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+
+\b0 \cf3 \cb1 \
+}
