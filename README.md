@@ -9,3 +9,6 @@ move all the data to a Neo4J Database for better visualizations.
 All libraries used are outlined in 'requirements.txt'
 run 'pip install -r requirements.txt' to install all packages before running.
 An authentication will be needed for the google NLP and Reddit API to work properly (each needs its own respective auth).
+
+Environment variables need to be set for everything to work.
+make a python file called 'environset.py' and define functions for setting Reddit api keys, google nlp keys, and mysql login information and
