@@ -1,56 +1,33 @@
 import os
-# Imports the Google Cloud client library
-from google.cloud import language
-from google.cloud.language import enums
-from google.cloud.language import types
+import re
+from textblob import TextBlob
 from mysqlstuff import *
 
 
+def convert_to_set(text):
+    wordList = re.sub("[^\w]", " ", text).split()
+    for x in range(0, len(wordList)):
+        wordList[x] = wordList[x].lower()
+    return set(wordList)
+
+
 def find_subject(text):
+    tCompare = convert_to_set(text)
     subjects = get_subjects()
 
-    os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = str('/Users/timc/Desktop/redditNLP-c250299d83e5.json')
-    # Instantiates a client
-    client = language.LanguageServiceClient()
-
-    # The text to analyze
-    document = types.Document(
-        content=text,
-        type=enums.Document.Type.PLAIN_TEXT)
-
-    s = client.analyze_sentiment(document)
-    sentiment = s.document_sentiment
-
-    # Detects the sentiment of the text
-    props = client.analyze_entities(document).entities
-
-    possible = []
-    # print(props)
+    possible=[]
     for s in subjects:
-        for p in props:
-            if p.name.lower() in s[1].lower():
-                sid = s[0]
-                possible.append([p,sid])
+        if s[1] in tCompare:
+            possible.append([s[1], s[0]])
 
-    if len(possible) > 1:
-        top = [possible[0]]
-        for s in range(1, len(possible)):
-            f = possible[s][0].salience
-            if f > top[0][0].salience:
-                top[0] = possible[s]
-        return top
-    else:
-        return possible
+    # for now just takes first found subject
+    # TODO Better way to determine comments subject
+
+    return possible[0]
 
 
 def text_sentiment(text):
-    os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = str('/Users/timc/Desktop/redditNLP-c250299d83e5.json')
-    # Instantiates a client
-    client = language.LanguageServiceClient()
+    to_analise = TextBlob(text)
+    score = to_analise.sentiment
+    return score.polarity
 
-    document = types.Document(
-        content=text,
-        type=enums.Document.Type.PLAIN_TEXT)
-
-    sentiment = client.analyze_sentiment(document=document).document_sentiment
-    return sentiment.score

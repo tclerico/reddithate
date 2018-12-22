@@ -75,7 +75,7 @@ def get_data(subreddits, postCount):
                         comment_subject = find_subject(comment.body)
                         if len(comment_subject) > 0:
                             # get all info from comments and add to list
-                            print("comment id: "+comment.id+" in post: "+comment.submission.id+" subject: "+str(comment_subject[0][1]))
+                            print("comment id: "+comment.id+" in post: "+comment.submission.id+" subject: "+str(comment_subject[0]))
                             info = {
                                 'post_id': comment.submission.id,
                                 'comment_id': comment.id,
@@ -87,7 +87,7 @@ def get_data(subreddits, postCount):
                                 'body': comment.body,
                                 'score': comment.score,
                                 'parent_id': (comment.parent_id if str(comment.parent_id)[:2] != "t3" else 'NULL'),
-                                'subject_id': comment_subject[0][1],
+                                'subject_id': comment_subject[1],
                                 'sentiment': text_sentiment(comment.body),
                                 'subreddit_id': submission.subreddit_id[3:]
                             }
