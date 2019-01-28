@@ -11,4 +11,4 @@ run 'pip install -r requirements.txt' to install all packages before running.
 An authentication will be needed for the Reddit API to work properly.
 
 Environment variables need to be set for everything to work.
-make a python file called 'environset.py' and define functions for setting Reddit api keys, google nlp keys, and mysql login information and
+make a python file called 'environset.py' and define functions for setting Reddit api keys and mysql login information
